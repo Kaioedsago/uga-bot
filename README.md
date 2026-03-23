@@ -1,12 +1,12 @@
 # Uga Bot 🦎
 
-Um bot multifuncional para WhatsApp, construído com Node.js para automatizar tarefas e adicionar interações divertidas e úteis. O projeto começa com um poderoso criador de figurinhas e tem como objetivo expandir suas funcionalidades continuamente.
+Um bot multifuncional para WhatsApp, construído com Node.js que por enquanto só cria figurinhas mas a ideia é escalar até ele ser "BEM" mais funcional.
 
 ---
 
 ## 🚀 Sobre o Projeto
 
-Uga Bot nasceu da ideia de automatizar e enriquecer a experiência em grupos de WhatsApp. Utilizando a biblioteca `whatsapp-web.js`, ele opera controlando uma instância do WhatsApp Web em um servidor, permitindo uma interação rica e flexível.
+Uga Bot só teve o estopim de criação com a dificuldade dos apps de figurinhas com anuncios e etc, a ideia é que futuramente ele crie figurinhas, baixe audios e muito mais.
 
 A arquitetura foi pensada para ser modular, facilitando a adição de novos comandos e recursos no futuro.
 
