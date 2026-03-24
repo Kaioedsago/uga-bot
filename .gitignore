@@ -1,8 +1,5 @@
-# Pasta de dependências (nunca deve ir para o GitHub)
-node_modules
-
-# Arquivos de log do NPM
-npm-debug.log
-
-# Pasta de autenticação do WhatsApp (contém dados sensíveis da sessão)
+## `.gitignore`
+node_modules/
 .wwebjs_auth/
+.wwebjs_cache/
+*.log

@@ -4,12 +4,40 @@ const ytDlp = new YTDlpWrap();
 const qrcode = require('qrcode-terminal');
 const sharp = require('sharp');
 const http = require('http');
+const fs = require('fs');
 
-// ============================================================
-// CONFIGURAÇÃO DO CLIENTE
-// LocalAuth salva a sessão em disco para não precisar
-// escanear o QR Code toda vez que o bot reiniciar
-// ============================================================
+// FRASES
+const { frasesFigurinha } = require('./dados');
+
+// ==========================
+// FRASE ALEATÓRIA
+// ==========================
+function fraseAleatoria(lista) {
+  return lista[Math.floor(Math.random() * lista.length)];
+}
+
+// ==========================
+// LOG CLEAN + COLORIDO
+// ==========================
+function log(tipo, msg) {
+  const agora = new Date().toLocaleTimeString();
+
+  const cores = {
+    SYSTEM: '\x1b[36m',
+    SUCCESS: '\x1b[32m',
+    ERROR: '\x1b[31m'
+  };
+
+  const reset = '\x1b[0m';
+
+  if (!cores[tipo]) return;
+
+  console.log(`${cores[tipo]}[${agora}] [${tipo}] ${msg}${reset}`);
+}
+
+// ==========================
+// CLIENT
+// ==========================
 const client = new Client({
   authStrategy: new LocalAuth({ dataPath: '.wwebjs_auth' }),
   puppeteer: {
@@ -23,159 +51,176 @@ const client = new Client({
   }
 });
 
-// ============================================================
-// QR CODE — aparece no terminal na primeira vez
-// ============================================================
+// ==========================
+// QR CODE
+// ==========================
 client.on('qr', (qr) => {
   console.log('\n📱 Escaneie o QR Code:\n');
   qrcode.generate(qr, { small: true });
 });
 
-// ============================================================
-// PRONTO — bot conectado e funcionando
-// ============================================================
+// ==========================
+// READY
+// ==========================
 client.on('ready', () => {
-  console.log('✅ Bot conectado!');
-  console.log('📌 Comandos ativos: !uga-stick');
+  log('SYSTEM', 'Bot conectado!');
 });
 
-// ============================================================
-// MENSAGENS — toda mensagem recebida passa por aqui
-// ============================================================
-client.on('message', async (msg) => {
+// ==========================
+// MENSAGENS
+// ==========================
+client.on('message_create', async (msg) => {
   try {
     const comando = msg.body.toLowerCase().trim();
 
-    // --------------------------------------------------------
-    // DETECTOR DE ONE PIECE
-    // Detecta qualquer variação: "one piece", "OnePiece",
-    // "ONEPIECE", "one  piece", etc.
-    // Fica antes dos comandos para funcionar em qualquer mensagem
-    // --------------------------------------------------------
+    // evita loop
+    if (msg.fromMe && !comando.startsWith('uga-')) return;
+
+    // ONE PIECE
     if (/one\s*piece/i.test(msg.body)) {
       await msg.reply('Você é tchola');
       return;
     }
 
-    // Se não for o comando certo, ignora
-    if (comando !== '!uga-stick') return;
+    // ==========================
+    // UGA-STICK
+    // ==========================
+    if (comando === 'uga-stick') {
+      let media;
 
-    // --------------------------------------------------------
-    // !UGA-STICK — converte imagem ou GIF em figurinha
-    // --------------------------------------------------------
-    if (!msg.hasMedia) {
-      await msg.reply('⚠️ Envie uma *imagem* ou *GIF* junto com o comando !uga-stick');
-      return;
-    }
+      if (msg.hasMedia) {
+        media = await msg.downloadMedia();
+      } else if (msg.hasQuotedMsg) {
+        const quoted = await msg.getQuotedMessage();
+        if (quoted.hasMedia) {
+          media = await quoted.downloadMedia();
+        }
+      }
 
-    await msg.reply('⏳ Convertendo para figurinha...');
-
-    // Baixa a mídia da mensagem
-    const media = await msg.downloadMedia();
-
-    if (!media) {
-      await msg.reply('❌ Não consegui baixar a imagem. Tente novamente.');
-      return;
-    }
-
-    // Verifica se o formato é aceito
-    const tiposAceitos = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (!tiposAceitos.includes(media.mimetype)) {
-      await msg.reply('❌ Formato não suportado. Envie JPG, PNG, GIF ou WEBP.');
-      return;
-    }
-
-    // --------------------------------------------------------
-    // Processa a imagem com sharp:
-    // - Redimensiona para 512x512 (exigido pelo WhatsApp)
-    // - Converte para WebP (formato de figurinha)
-    // - Suporta GIFs animados com { animated: true }
-    // --------------------------------------------------------
-    const stickerBuffer = await sharp(
-      Buffer.from(media.data, 'base64'),
-      { animated: media.mimetype === 'image/gif' }
-    )
-      .resize(512, 512, {
-        fit: 'contain',
-        background: { r: 0, g: 0, b: 0, alpha: 0 }
-      })
-      .webp({ quality: 80 })
-      .toBuffer();
-
-    // Cria o objeto de mídia e envia como figurinha
-    const sticker = new MessageMedia(
-      'image/webp',
-      stickerBuffer.toString('base64'),
-      'sticker.webp'
-    );
-
-        if (comando.startsWith('!uga-video')) {
-
-    // Pega a URL que vem depois do comando
-    // Ex: "!uga-video https://www.instagram.com/reel/abc123"
-    const url = msg.body.split(' ')[1];
-
-    if (!url) {
-        await msg.reply('⚠️ Envie o link junto! Ex: *!uga-video https://instagram.com/...*');
+      if (!media) {
+        await msg.reply('⚠️ Envie ou responda uma imagem/GIF com uga-stick');
         return;
+      }
+
+      await msg.react('⏳');
+
+      const stickerBuffer = await sharp(
+        Buffer.from(media.data, 'base64'),
+        { animated: media.mimetype === 'image/gif' }
+      )
+        .resize(512, 512, {
+          fit: 'contain',
+          background: { r: 0, g: 0, b: 0, alpha: 0 }
+        })
+        .webp({ quality: 80 })
+        .toBuffer();
+
+      const sticker = new MessageMedia(
+        'image/webp',
+        stickerBuffer.toString('base64'),
+        'sticker.webp'
+      );
+
+      const frase = fraseAleatoria(frasesFigurinha);
+
+      await msg.reply(frase);
+
+      await msg.reply(sticker, null, {
+        sendMediaAsSticker: true,
+        stickerAuthor: 'KaioBelisco',
+        stickerName: 'Uga-Bot'
+      });
+
+      await msg.react('✅');
+
+      log('SUCCESS', 'Figurinha enviada');
+      return;
     }
 
-    await msg.reply('⏳ Baixando vídeo...');
+    // ==========================
+    // UGA-VIDEO
+    // ==========================
+    if (comando.startsWith('uga-video')) {
+      const url = msg.body.split(' ')[1];
 
-    const caminhoVideo = `./video_${Date.now()}.mp4`;
+      if (!url) {
+        await msg.reply('⚠️ Envie um link válido!');
+        return;
+      }
 
-    // yt-dlp baixa o vídeo e salva no servidor
-    await ytDlp.execPromise([
-        url,
-        '-o', caminhoVideo,   // caminho de saída
-        '--no-playlist',       // não baixa playlists inteiras
-        '-f', 'best[ext=mp4]' // melhor qualidade em MP4
-    ]);
+      await msg.react('⏳');
 
-    // Lê o arquivo baixado e converte para base64 para enviar
-    const videoBuffer = fs.readFileSync(caminhoVideo);
-    const videoMedia = new MessageMedia(
+      const caminho = `./video_${Date.now()}.mp4`;
+
+      try {
+        await ytDlp.execPromise([
+          url,
+          '-o', caminho,
+          '--no-playlist',
+          '-S', 'res:480'
+        ]);
+      } catch {
+        await ytDlp.execPromise([
+          url,
+          '-o', caminho,
+          '--no-playlist',
+          '-f', 'worst'
+        ]);
+      }
+
+      if (!fs.existsSync(caminho)) {
+        await msg.reply('❌ Não consegui baixar esse vídeo');
+        return;
+      }
+
+      const stats = fs.statSync(caminho);
+      const tamanhoMB = stats.size / (1024 * 1024);
+
+      if (tamanhoMB > 16) {
+        fs.unlinkSync(caminho);
+        await msg.reply('❌ Vídeo muito grande (limite ~16MB)');
+        return;
+      }
+
+      const buffer = fs.readFileSync(caminho);
+
+      const video = new MessageMedia(
         'video/mp4',
-        videoBuffer.toString('base64'),
+        buffer.toString('base64'),
         'video.mp4'
-    );
+      );
 
-    await msg.reply(videoMedia);
+      await msg.reply(video);
 
-    // Deleta o arquivo do servidor após enviar para não acumular lixo
-    fs.unlinkSync(caminhoVideo);
+      fs.unlinkSync(caminho);
+
+      log('SUCCESS', 'Vídeo enviado');
+      return;
     }
 
-    await msg.reply(sticker, null, { sendMediaAsSticker: true });
-    console.log(`✅ Figurinha enviada para: ${msg.from}`);
-
-  } catch (erro) {
-    console.error('❌ Erro:', erro);
-    await msg.reply('❌ Ocorreu um erro. Tente novamente!');
+  } catch (err) {
+    log('ERROR', err.stack || err);
+    await msg.reply('❌ Erro ao processar comando');
   }
 });
 
-
-
-
-
-// ============================================================
-// DESCONECTADO — tenta reconectar automaticamente após 5s
-// ============================================================
+// ==========================
+// DESCONECTADO
+// ==========================
 client.on('disconnected', (reason) => {
-  console.log('⚠️ Desconectado:', reason);
+  log('ERROR', `Desconectado: ${reason}`);
   setTimeout(() => client.initialize(), 5000);
 });
 
-// ============================================================
-// KEEP ALIVE — servidor HTTP para o Render não hibernar
-// O UptimeRobot bate nessa URL a cada 5 min mantendo o bot vivo
-// ============================================================
+// ==========================
+// KEEP ALIVE
+// ==========================
 http.createServer((req, res) => {
   res.writeHead(200);
   res.end('🤖 Bot rodando!');
-}).listen(process.env.PORT || 3000, () => {
-  console.log(`🌐 Keep-alive rodando na porta ${process.env.PORT || 3000}`);
-});
+}).listen(process.env.PORT || 3000);
 
+// ==========================
+// START
+// ==========================
 client.initialize();
