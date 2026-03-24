@@ -24,12 +24,12 @@ A arquitetura foi pensada para ser modular, facilitando a adição de novos coma
 
 A visão para o Uga Bot é transformá-lo em um assistente completo. As próximas funcionalidades planejadas incluem:
 
-- [ ] Baixar músicas e vídeos do YouTube.
+- [x] Baixar músicas e vídeos do YouTube.
 - [ ] Fazer pesquisas em plataformas como a Wikipedia.
 - [ ] Buscar letras de músicas.
 - [ ] Criar enquetes personalizadas.
 - [ ] Gerenciar tarefas e lembretes para grupos.
-- [ ] *E muito mais! Sugestões são sempre bem-vindas.*
+- [ ] *Sugestões são sempre bem-vindas.*
 
 ---
 
@@ -38,8 +38,7 @@ A visão para o Uga Bot é transformá-lo em um assistente completo. As próxima
 Siga os passos abaixo para rodar sua própria instância do Uga Bot.
 
 #### Pré-requisitos
-* **Node.js v20+**
-* **FFmpeg** instalado e configurado no PATH do sistema.
+* **Node.js v20+**.
 
 #### Instalação
 1. Clone o repositório:
@@ -61,5 +60,5 @@ Escaneie o QR Code gerado no terminal com o número de WhatsApp que será o bot.
 
 * **whatsapp-web.js**
 
-* **FFmpeg**
+* **yt-dlp-wrap**
 
