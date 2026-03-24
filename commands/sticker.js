@@ -27,7 +27,6 @@ module.exports = async function handleSticker(msg) {
   }
 
   try {
-    await msg.react('⏳');
 
     const buffer = Buffer.from(media.data, 'base64');
 
