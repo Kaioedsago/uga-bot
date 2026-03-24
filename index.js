@@ -38,10 +38,13 @@ function log(tipo, msg) {
 // ==========================
 // CLIENT
 // ==========================
+
+process.env.PUPPETEER_CACHE_DIR = '/opt/render/.cache/puppeteer';
 const client = new Client({
-  authStrategy: new LocalAuth({ dataPath: '.wwebjs_auth' }),
+   authStrategy: new LocalAuth({ dataPath: '.wwebjs_auth' }),
   puppeteer: {
     headless: true,
+    executablePath: '/opt/render/.cache/puppeteer/chrome/linux-*/chrome-linux64/chrome',
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
