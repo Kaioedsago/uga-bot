@@ -29,9 +29,11 @@ const client = new Client({
 // ==========================
 // EVENTS
 // ==========================
-client.on('qr', (qr) => {
-  console.log('\n📱 Escaneie o QR Code:\n');
-  qrcode.generate(qr, { small: true });
+let qrCodeBase64 = null;
+
+client.on('qr', async (qr) => {
+  const QRCode = require('qrcode');
+  qrCodeBase64 = await QRCode.toDataURL(qr);
 });
 
 client.on('ready', () => {
@@ -75,6 +77,15 @@ client.on('message_create', async (msg) => {
 // KEEP ALIVE
 // ==========================
 http.createServer((req, res) => {
+  if (req.url === '/qr') {
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    res.end(`
+      <h1>Escaneie o QR Code</h1>
+      <img src="${qrCodeBase64}" />
+    `);
+    return;
+  }
+
   res.writeHead(200);
   res.end('🤖 Bot rodando!');
 }).listen(process.env.PORT || 3000);
